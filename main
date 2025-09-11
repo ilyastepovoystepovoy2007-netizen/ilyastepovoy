@@ -1,0 +1,101 @@
+import sqlite3
+
+def create_db():
+    # Подключаемся к базе данных (она будет создана, если её нет)
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Создаём таблицу пользователей (если она ещё не существует)
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+    )
+    ''')
+
+    # Подтверждаем изменения и закрываем соединение
+    conn.commit()
+    conn.close()
+
+# Создание базы данных
+create_db()
+import tkinter as tk
+from tkinter import messagebox
+import sqlite3
+
+# Функция для регистрации нового пользователя
+def register_user():
+    username = entry_username.get()
+    password = entry_password.get()
+
+    # Проверка на пустые поля
+    if username == "" or password == "":
+        messagebox.showwarning("Ошибка", "Пожалуйста, заполните все поля.")
+        return
+
+    # Подключаемся к базе данных
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Проверка, существует ли уже такой пользователь
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    if cursor.fetchone():
+        messagebox.showwarning("Ошибка", "Пользователь с таким именем уже существует.")
+    else:
+        # Вставка нового пользователя в базу данных
+        cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+        conn.commit()
+        messagebox.showinfo("Успех", "Вы успешно зарегистрированы!")
+    conn.close()
+
+# Функция для авторизации
+def login_user():
+    username = entry_username.get()
+    password = entry_password.get()
+
+    # Проверка на пустые поля
+    if username == "" or password == "":
+        messagebox.showwarning("Ошибка", "Пожалуйста, заполните все поля.")
+        return
+
+    # Подключаемся к базе данных
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+
+    # Проверка введённого имени пользователя и пароля
+    cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
+    user = cursor.fetchone()
+
+    if user:
+        messagebox.showinfo("Успех", "Вы успешно вошли в систему!")
+    else:
+        messagebox.showwarning("Ошибка", "Неверное имя пользователя или пароль.")
+    conn.close()
+
+# Создаём окно приложения
+root = tk.Tk()
+root.title("Авторизация и регистрация")
+
+# Создаём элементы интерфейса
+label_username = tk.Label(root, text="Имя пользователя")
+label_username.grid(row=0, column=0)
+
+entry_username = tk.Entry(root)
+entry_username.grid(row=0, column=1)
+
+label_password = tk.Label(root, text="Пароль")
+label_password.grid(row=1, column=0)
+
+entry_password = tk.Entry(root, show="*")
+entry_password.grid(row=1, column=1)
+
+# Кнопки для регистрации и авторизации
+btn_register = tk.Button(root, text="Зарегистрироваться", command=register_user)
+btn_register.grid(row=2, column=0)
+
+btn_login = tk.Button(root, text="Войти", command=login_user)
+btn_login.grid(row=2, column=1)
+
+# Запуск главного цикла Tkinter
+root.mainloop()
